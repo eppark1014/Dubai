@@ -1,0 +1,22 @@
+# BL Handwriting Instruction Extractor - Dependencies
+# Python 3.8+ required
+
+# Core web framework
+streamlit>=1.30.0
+
+# PDF processing
+pdf2image>=1.16.0
+# Note: pdf2image requires poppler-utils to be installed on the system
+# Ubuntu/Debian: sudo apt-get update && sudo apt-get install -y poppler-utils
+# macOS: brew install poppler
+# Windows: Download from https://github.com/oschwartz10612/poppler-windows/releases/
+
+# OCR - PaddleOCR for printed and handwritten text recognition
+# Note: PaddleOCR has many heavy dependencies. Install core first.
+paddleocr>=2.6.0
+paddlepaddle>=2.5.0
+
+# Image processing (use version compatible with paddleocr)
+opencv-python<=4.6.0.66
+Pillow>=9.0.0
+numpy>=1.21.0,<2.0.0
