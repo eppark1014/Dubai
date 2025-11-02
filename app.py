@@ -36,11 +36,11 @@ HANDWRITING_OCR_LANG = 'korean'  # PaddleOCR "korean" model supports ko/en mix
 # Initialize OCR engines lazily (speeds up first load)
 @st.cache_resource(show_spinner=True)
 def get_printed_ocr():
-    return PaddleOCR(lang=PRINTED_OCR_LANG, use_angle_cls=True, show_log=False)
+    return PaddleOCR(lang=PRINTED_OCR_LANG, use_angle_cls=True)
 
 @st.cache_resource(show_spinner=True)
 def get_handwriting_ocr():
-    return PaddleOCR(lang=HANDWRITING_OCR_LANG, use_angle_cls=True, show_log=False)
+    return PaddleOCR(lang=HANDWRITING_OCR_LANG, use_angle_cls=True)
 
 # -------------- Data Models --------------
 @dataclass
