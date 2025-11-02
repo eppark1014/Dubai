@@ -36,11 +36,19 @@ HANDWRITING_OCR_LANG = 'korean'  # PaddleOCR "korean" model supports ko/en mix
 # Initialize OCR engines lazily (speeds up first load)
 @st.cache_resource(show_spinner=True)
 def get_printed_ocr():
-    return PaddleOCR(lang=PRINTED_OCR_LANG, use_angle_cls=True)
+    try:
+        # Try new parameter first, fallback to old one if not supported
+        return PaddleOCR(lang=PRINTED_OCR_LANG, use_textline_orientation=True)
+    except:
+        return PaddleOCR(lang=PRINTED_OCR_LANG)
 
 @st.cache_resource(show_spinner=True)
 def get_handwriting_ocr():
-    return PaddleOCR(lang=HANDWRITING_OCR_LANG, use_angle_cls=True)
+    try:
+        # Try new parameter first, fallback to old one if not supported
+        return PaddleOCR(lang=HANDWRITING_OCR_LANG, use_textline_orientation=True)
+    except:
+        return PaddleOCR(lang=HANDWRITING_OCR_LANG)
 
 # -------------- Data Models --------------
 @dataclass
@@ -312,8 +320,19 @@ def main():
         pdf_bytes = uploaded.read()
         
         try:
+            # Initialize OCR engines first with better error handling
+            with st.spinner("Initializing OCR engines..."):
+                try:
+                    printed_ocr = get_printed_ocr()
+                    handwriting_ocr = get_handwriting_ocr()
+                    st.success("✅ OCR engines initialized successfully")
+                except Exception as e:
+                    st.error(f"Failed to initialize OCR engines: {str(e)}")
+                    st.stop()
+            
             with st.spinner("Converting PDF to images..."):
                 pages = pdf_to_images(pdf_bytes, dpi=300)
+                st.success(f"✅ Converted PDF to {len(pages)} page(s)")
 
             all_actions: List[Action] = []
             page_previews: List[Image.Image] = []
@@ -322,24 +341,29 @@ def main():
                 st.markdown(f"### Page {i+1}")
                 
                 with st.spinner(f"Processing page {i+1}..."):
-                    # 1) Detect handwriting regions (heuristic color)
-                    regions = extract_red_blue_regions(pil_img)
-                    st.info(f"Detected {len(regions)} handwriting regions")
-                    
-                    # 2) OCR of printed text
-                    printed = ocr_printed(pil_img)
-                    st.info(f"Detected {len(printed)} printed text lines")
-                    
-                    # 3) OCR of handwriting regions
-                    regions = ocr_handwriting(pil_img, regions)
-                    
-                    # 4) Build actions
-                    actions = build_actions(i, regions, printed)
-                    all_actions.extend(actions)
-                    
-                    # 5) Overlay preview
-                    overlay = draw_overlays(pil_img, regions, printed)
-                    page_previews.append(overlay)
+                    try:
+                        # 1) Detect handwriting regions (heuristic color)
+                        regions = extract_red_blue_regions(pil_img)
+                        st.info(f"Detected {len(regions)} handwriting regions")
+                        
+                        # 2) OCR of printed text
+                        printed = ocr_printed(pil_img)
+                        st.info(f"Detected {len(printed)} printed text lines")
+                        
+                        # 3) OCR of handwriting regions
+                        regions = ocr_handwriting(pil_img, regions)
+                        
+                        # 4) Build actions
+                        actions = build_actions(i, regions, printed)
+                        all_actions.extend(actions)
+                        
+                        # 5) Overlay preview
+                        overlay = draw_overlays(pil_img, regions, printed)
+                        page_previews.append(overlay)
+                    except Exception as e:
+                        st.error(f"Error processing page {i+1}: {str(e)}")
+                        st.exception(e)
+                        continue
                 
                 st.image(overlay, use_container_width=True)
 
